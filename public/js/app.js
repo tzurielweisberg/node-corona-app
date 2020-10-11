@@ -20,8 +20,7 @@ weatherForm.addEventListener('submit', (e) => {
   
   message2.textContent = '';
   
-  
-  fetch('/corona?country=' + search.value.toUpperCase ).then((response) => {
+  fetch('/corona?country=' + search.value.toUpperCase() ).then((response) => {
     response.json().then((data) => {
       if (data.error) {
         console.log('error' + data.error);
@@ -37,7 +36,7 @@ weatherForm.addEventListener('submit', (e) => {
 
         const newConfirmed = data.totalConfirmed-data.totalRecovered;
         message7.textContent = 'Confirmed (recovered not included) (סך החולים ללא המחלימים): ' + newConfirmed;
-          
+
       }
     })
   })
