@@ -20,6 +20,7 @@ weatherForm.addEventListener('submit', (e) => {
   
   message2.textContent = '';
   
+  
   fetch('/corona?country=' + search.value.toUpperCase ).then((response) => {
     response.json().then((data) => {
       if (data.error) {
