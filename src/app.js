@@ -30,42 +30,6 @@ app.get('', (req, res) => {
   })
 })
 
-app.get('/america', (req, res) => {
-  res.render('america', {
-    title: 'America',
-    name: 'Tzur'
-  })
-})
-
-app.get('/world', (req, res) => {
-  res.render('world', {
-    title: 'World',
-    
-    name: 'Tzur'
-
-  })
-})
-
-
-app.get('/weather', (req, res) => {
-  coronaSum((error, transBody) => {
-    const country = req.query.country;
-    if (error) {
-      return res.send({ error })
-    }
-    else {
-      res.send({
-        location,
-        address: addd,
-        forecast: transBody2.transelatedValue,
-        degrees: temprature,
-        degreesString: transBody3.transelatedValue,
-        transelatedForcast: transBody.transelatedString,
-      });
-    }
-  })
-})
-
 
 app.get('/corona', (req, res) => {
   const country = req.query.country;
@@ -84,11 +48,6 @@ app.get('/corona', (req, res) => {
           totalDeaths: body.totalDeaths ,
           newRecovered: body.newRecovered ,
           totalRecovered: body.totalRecovered 
-
-
-
-
-
       });
     }
   })

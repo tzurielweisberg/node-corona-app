@@ -20,8 +20,7 @@ weatherForm.addEventListener('submit', (e) => {
   
   message2.textContent = '';
   
-  //  fetch('http://localhost:3000/weather?address=' + location).then((response)=>{
-  fetch('/corona?country=' + search.value ).then((response) => {
+  fetch('/corona?country=' + search.value.toUpperCase ).then((response) => {
     response.json().then((data) => {
       if (data.error) {
         console.log('error' + data.error);
@@ -37,22 +36,6 @@ weatherForm.addEventListener('submit', (e) => {
 
         const newConfirmed = data.totalConfirmed-data.totalRecovered;
         message7.textContent = 'Confirmed (recovered not included) (סך החולים ללא המחלימים): ' + newConfirmed;
-
-        
-
-
-        // totalConfirmed ,
-        // newDeaths ,
-        // totalDeaths ,
-        // newRecovered ,
-        // totalRecovered ,
-        
-        
-        // message2.innerHTML = 
-        // "123 hhh</p><p>246 ttt";
-        // message1.innerHTML = 
-        //   data.country 
-        //   + "<br/>" + data.newConfirmed 
           
       }
     })
