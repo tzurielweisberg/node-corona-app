@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: CloudFormation template for atlasScanStatus
+Parameters:
+    Environment:
+        Type: String
+        AllowedValues: ['dev', 'prod']
+        Default: 'dev'
+Mappings:
+    ParameterMap:
+        dev:
+            InternalSubnets: atlas-vpc-InternalSubnets
+            DataDogLambdaARN: 'arn:aws:lambda:us-east-1:934027998561:function:serverlessrepo-Datadog-Log-For-loglambdaddfunction-1079YAQ6L0DP8'
+        prod:
+            InternalSubnets: atlas-vpc-InternalSubnetsExtended
+            DataDogLambdaARN: 'arn:aws:lambda:us-east-1:781851992606:function:serverlessrepo-Datadog-Log-For-loglambdaddfunction-1DJHY99HXZ02Z'
+Resources:
+  lambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      VpcConfig:
+        SecurityGroupIds:
+          - '{{resolve:ssm:/ultrabox/lambda/security-group-id:1}}'
+        SubnetIds:
+          Fn::Split:
+            - ","
+            - Fn::ImportValue: !FindInMap [ParameterMap, !Ref Environment, InternalSubnets]
+      Handler: lambda_handler
+      FunctionName: atlasScanStatus
+      Environment:
+        Variables:
+          ATLAS_ENV: !Ref Environment
+      Runtime: go1.x
+      CodeUri: ./
+      Policies:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - Statement: # Permission to get MongoDB connection string from SSM
+            - Action:
+                - ssm:GetParameter
+              Effect: Allow
+              Resource:
+                - "arn:aws:ssm:*:*:parameter/atlas/mongodb/connection_string"
+        - Statement:
+            - Action:
+                - kinesis:PutRecord
+              Effect: Allow
+              Resource:
+                - !Sub 'arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/atlasScanStatus'
+        - Statement:
+            - Action:
+                - "xray:PutTraceSegments"
+                - "xray:PutTelemetryRecords"
+              Effect: Allow
+              Resource: "*"
+      MemorySize: 256
+      Timeout: 900
+      Tags:
+        env: !Join ['-', ['atlas', !Ref Environment]]
+        datadog: "true"
+      ReservedConcurrentExecutions: 3 # 1 for SNS and 1 for each shard
+      Events:
+        Stream:
+          Type: Kinesis
+          Properties:
+            Stream:
+              !Sub 'arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/atlasScanStatus'
+            BatchSize: 100
+            StartingPosition: TRIM_HORIZON
+        SnsTopic:
+          Type: SNS
+          Properties:
+            Topic:
+              !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:atlasScanStatus'
+  AtlasStatusTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: atlasScanStatus
+      TopicName: atlasScanStatus
+  LambdaFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn: lambdaFunction
+    Properties:
+      RetentionInDays: 14
+      LogGroupName:
+        Fn::Join:
+          - ''
+          - - /aws/lambda/
+            - Ref: lambdaFunction
+  LambdaSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      LogGroupName: !Ref LambdaFunctionLogGroup
+      DestinationArn: !FindInMap [ParameterMap, !Ref Environment, DataDogLambdaARN]
+      FilterPattern: ""
+Outputs:
+  functionArn:
+    Value:
+      Fn::Join:
+        - ''
+        - - 'arn:aws:apigateway:'
+          - Ref: AWS::Region
+          - ":lambda:path/2015-03-31/functions/"
+          - Fn::GetAtt:
+              - lambdaFunction
+              - Arn
+          - "/invocations"
+    Description: Function ARN for atlasScanStatus
+    Export:
+      Name: !Sub ${AWS::StackName}-functionArn
