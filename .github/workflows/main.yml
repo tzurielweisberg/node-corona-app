@@ -29,3 +29,4 @@ jobs:
           TRIVY_RUN_AS_PLUGIN: 'aqua'
           AQUA_URL: ${{ secrets.AQUA_URL }}
           CSPM_URL: ${{ secrets.CSPM_URL }}
+          DEBUG: true
