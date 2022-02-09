@@ -11,13 +11,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+      
+      - name: hello world
+        run: echo "The selected color is green"
 
       - name: Run Trivy vulnerability scanner in IaC mode
+        
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'config'
           hide-progress: false
           format: 'json'
+          debug: true
         env:
           AQUA_KEY: ${{ secrets.AQUA_KEY }}
           AQUA_SECRET: ${{ secrets.AQUA_SECRET }}
